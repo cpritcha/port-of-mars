@@ -31,6 +31,7 @@ import _ from "lodash";
 import {getRandomIntInclusive} from "@/util";
 import {getAccomplishmentByID, getAccomplishmentIDs} from "@/repositories/Accomplishment";
 import {GameEvent} from "@/game/events/types";
+import { string } from "@colyseus/schema/lib/encoding/decode";
 
 export class ChatMessage extends Schema implements ChatMessageData {
   constructor(msg: ChatMessageData) {
@@ -789,6 +790,7 @@ class PlayerSet extends Schema implements PlayerSetData {
 }
 
 interface GameSerialized {
+  availableRoles: Array<Role>
   players: PlayerSetSerialized
   connections: { [sessionId: string]: Role }
   maxRound: number
@@ -806,9 +808,8 @@ interface GameSerialized {
 }
 
 export class GameState extends Schema implements GameData {
-  constructor(userRoles: { [username: string]: Role }) {
+  constructor() {
     super();
-    this.connections = userRoles;
     this.marsEventDeck = new MarsEventsDeck();
     this.lastTimePolled = new Date();
     this.maxRound = getRandomIntInclusive(8, 12);
@@ -824,6 +825,7 @@ export class GameState extends Schema implements GameData {
   };
 
   fromJSON(data: GameSerialized): GameState {
+    this.availableRoles = data.availableRoles;
     this.players.fromJSON(data.players);
     this.connections = data.connections;
     this.maxRound = data.maxRound;
@@ -854,6 +856,7 @@ export class GameState extends Schema implements GameData {
 
   toJSON(): GameSerialized {
     return {
+      availableRoles: this.availableRoles,
       players: this.players.toJSON(),
       connections: this.connections,
       maxRound: this.maxRound,
@@ -871,10 +874,12 @@ export class GameState extends Schema implements GameData {
     };
   }
 
+  availableRoles = _.cloneDeep(ROLES);
+
   @type(PlayerSet)
   players: PlayerSet;
 
-  connections: { [username: string]: Role } = {};
+  connections: { [sessionId: string]: Role } = {};
 
   maxRound: number;
   lastTimePolled: Date;

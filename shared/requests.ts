@@ -62,5 +62,9 @@ export type Requests =
   | DiscardAccomplishmentCardData
   | SendTradeRequestData
   | AcceptTradeRequestData
+<<<<<<< HEAD
   | RejectTradeRequestData
+=======
+  | RejectTradeRquestData
+>>>>>>> feat: start to implement events on server
   | PersonalGainCmdData;
