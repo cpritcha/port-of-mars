@@ -83,6 +83,8 @@ export const PHASE_LABELS: { [k in Phase]: string } = {
   [Phase.defeat]: 'Defeat!'
 };
 
+///////////////////////// EVENTS ///////////////////////// 
+
 export type EventServerAction =
   // EVENT
   | 'ADD_EVENT_TWO'
@@ -103,8 +105,8 @@ export type EventServerAction =
   // INVESTMENTS
   | 'PLAYER_MODIFY_SPECIALTY_COST_BLOCKED'
   | 'PLAYER_MODIFY_DISABLED_COST_THREE'
-  | 'PLAYER_MODIFY_TIMEBLOCKS_MINUS_FIVE'
   // TIMEBLOCKS
+  | 'PLAYER_MODIFY_TIMEBLOCKS_MINUS_FIVE'
   | 'PLAYER_MODIFY_TIMEBLOCKS_EQUALS_THREE';
 
 export type EventClientAction =
@@ -149,12 +151,24 @@ export interface MarsEventData {
   duration: number;
 }
 
+export interface MarsEventDataDeckItem extends MarsEventData {
+  copies: number;
+}
+
+///////////////////////// END EVENTS ///////////////////////// 
+
+///////////////////////// MARS LOG ///////////////////////// 
+
 export interface MarsLogMessageData {
   performedBy: Role;
   category: string;
   content: string;
   timestamp: number;
 }
+
+/////////////////////////  END MARS LOG ///////////////////////// 
+
+///////////////////////// ACCOMPLISHMENTS ///////////////////////// 
 
 export interface AccomplishmentData {
   id: number;
@@ -175,7 +189,9 @@ export interface AccomplishmentSetData {
   bought: Array<AccomplishmentData>;
   purchasable: Array<AccomplishmentData>;
 }
+///////////////////////// END ACCOMPLISHMENTS ///////////////////////// 
 
+///////////////////////// TRADE
 export interface TradeAmountData {
   role: Role;
   resourceAmount: ResourceAmountData;
@@ -187,6 +203,8 @@ export interface TradeData {
 }
 
 export type TradeSetData = { [uuid: string]: TradeData };
+
+///////////////////////// END TRADE ///////////////////////// 
 
 export interface PlayerData {
   role: Role;

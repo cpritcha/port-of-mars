@@ -8,6 +8,7 @@ import {
   Phase,
   Role,
   ROLES,
+  Resource,
   TradeData,
   CURATOR
 } from 'shared/types';
@@ -20,6 +21,7 @@ import {
   Trade,
   MarsLogMessage
 } from '@/game/state';
+import { PersonalGain } from '@/repositories/MarsEvents';
 import { GameEvent } from '@/game/events/types';
 import { getAccomplishmentByID } from '@/repositories/Accomplishment';
 
@@ -134,24 +136,32 @@ export class AcceptTradeRequest extends GameEventWithData {
   }
 
   apply(game: GameState): void {
-    let toMsg:Array<string> = []
-    for(const [resource,amount] of Object.entries(game.tradeSet[this.data.id].to.resourceAmount) as any){
-      if(amount > 0){
-        toMsg.push(`${amount} ${resource}`)
+    let toMsg: Array<string> = [];
+    for (const [resource, amount] of Object.entries(
+      game.tradeSet[this.data.id].to.resourceAmount
+    ) as any) {
+      if (amount > 0) {
+        toMsg.push(`${amount} ${resource}`);
       }
     }
 
-    let fromMsg:Array<string> = []
-    for(const [resource,amount] of Object.entries(game.tradeSet[this.data.id].from.resourceAmount) as any){
-      if(amount > 0){
-        fromMsg.push(`${amount} ${resource}`)
+    let fromMsg: Array<string> = [];
+    for (const [resource, amount] of Object.entries(
+      game.tradeSet[this.data.id].from.resourceAmount
+    ) as any) {
+      if (amount > 0) {
+        fromMsg.push(`${amount} ${resource}`);
       }
     }
-    
+
     const log = new MarsLogMessage({
       performedBy: game.tradeSet[this.data.id].from.role,
       category: 'Trade',
-      content: `The ${game.tradeSet[this.data.id].from.role} has traded ${fromMsg.join(", ")} in exchange for ${toMsg.join(", ")} from the ${game.tradeSet[this.data.id].to.role}`,
+      content: `The ${
+        game.tradeSet[this.data.id].from.role
+      } has traded ${fromMsg.join(', ')} in exchange for ${toMsg.join(
+        ', '
+      )} from the ${game.tradeSet[this.data.id].to.role}`,
       timestamp: this.dateCreated
     });
 
@@ -210,14 +220,6 @@ export class EnteredMarsEventPhase extends KindOnlyGameEvent {
   kind = 'entered-mars-event-phase';
 
   apply(game: GameState): void {
-    // console.log('EnteredMarsEventPhase');
-    // const log = new MarsLogMessage({
-    //   performedBy: CURATOR,
-    //   category: 'upkeep',
-    //   content: `upkeep decreased ${game.upkeep - game.nextRoundUpkeep()}`,
-    //   timestamp: this.dateCreated
-    // });
-
     game.resetPlayerReadiness();
     game.refreshPlayerPurchasableAccomplisments();
 
@@ -233,8 +235,8 @@ export class EnteredMarsEventPhase extends KindOnlyGameEvent {
 
     game.handleIncomplete();
     game.marsEvents.push(...marsEvents);
-    game.updateMarsEventsElapsed();
 
+    game.updateMarsEventsElapsed();
     game.marsEventsProcessed = GameState.DEFAULTS.marsEventsProcessed;
     game.marsEventDeck.updatePosition(game.marsEvents.length);
     // game.logs.push(log);
@@ -242,6 +244,8 @@ export class EnteredMarsEventPhase extends KindOnlyGameEvent {
     for (const player of game.players) {
       player.refreshPurchasableAccomplishments();
     }
+
+    // TODO: HANDLE CURRENT EVENT USING MARSEVENTSPROCESSED
   }
 }
 
@@ -337,40 +341,38 @@ export class StateSnapshotTaken implements GameEvent {
   }
 }
 
-// EVENT REQUESTS :: START
-export class EventSendPollResults extends GameEventWithData {
-  kind = 'event-send-poll-results';
+// export class EventEventAddTwo extends KindOnlyGameEvent {
+//   kind = 'event-event-add-two';
 
-  constructor(public data: { results: object }) {
+//   apply(game: GameState): void {
+//     const cards = game.marsEventDeck.drawAmount(2);
+//     const marsEvents = cards.map(e => new MarsEvent(e));
+//     game.marsEvents.push(...marsEvents);
+//     game.marsEventDeck.updatePosition(game.marsEvents.length);
+//   }
+// }
+
+// export class EventPlayerInvestmentsSpecialtyBlock extends GameEventWithData {
+//   kind = 'event-player-investments-specialty-block';
+
+//   constructor(public data: { role: Role }) {
+//     super();
+//   }
+
+//   apply(game: GameState) {
+//     const specialty: Resource = game.players[this.data.role].specialty;
+//     game.players[this.data.role].costs[specialty] = Infinity;
+//   }
+// }
+
+export class PersonalGainVoted extends GameEventWithData {
+  kind = 'personal-gain-voted';
+
+  constructor(public data: any) {
     super();
   }
 
-  apply(game: GameState): void {
-    console.log('EventSendPollResults: ', this.data.results);
+  apply(game: GameState) {
+    game.currentEvent.finalize(game);
   }
 }
-
-export class EventModifyInfluences extends GameEventWithData {
-  kind = 'event-modify-influences';
-
-  constructor(public data: { results: object }) {
-    super();
-  }
-
-  apply(game: GameState): void {
-    console.log('EventModifyInfluences: ', this.data.results);
-  }
-}
-
-export class EventModifyAccomplishments extends GameEventWithData {
-  kind = 'event-modify-accomplishments';
-
-  constructor(public data: { results: object }) {
-    super();
-  }
-
-  apply(game: GameState): void {
-    console.log('EventModifyAccomplishments: ', this.data.results);
-  }
-}
-// EVENT REQUESTS :: END

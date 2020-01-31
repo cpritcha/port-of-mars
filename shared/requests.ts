@@ -37,31 +37,19 @@ export interface AcceptTradeRequestData {
   id: string;
 }
 
-//NICK CHANGES
-export interface RejectTradeRquestData {
+export interface RejectTradeRequestData {
   kind: 'reject-trade-request';
   id: string;
 }
 
-// LORENZO CHANGES
 export interface SetPlayerReadinessData {
   kind: 'set-player-readiness';
   value: boolean;
 }
 
-export interface EventSendPollResultsData {
-  kind: 'event-send-poll-results';
-  results: object;
-}
-
-export interface EventModifyInfluencesData {
-  kind: 'event-modify-influences';
-  results: object;
-}
-
-export interface EventModifyAccomplishmentsData {
-  kind: 'event-modify-accomplishments';
-  results: object;
+export interface PersonalGainCmdData {
+  kind: 'personal-gain';
+  value: boolean;
 }
 
 export type Requests =
@@ -74,7 +62,5 @@ export type Requests =
   | DiscardAccomplishmentCardData
   | SendTradeRequestData
   | AcceptTradeRequestData
-  | RejectTradeRquestData
-  | EventSendPollResultsData
-  | EventModifyInfluencesData
-  | EventModifyAccomplishmentsData;
+  | RejectTradeRequestData
+  | PersonalGainCmdData;

@@ -23,12 +23,13 @@ import {
   ResourceAmountData,
   ResourceCostData,
   Role,
-  ROLES, TradeAmountData, TradeData, TradeSetData
+  ROLES, TradeAmountData, TradeData, TradeSetData,
+  MarsEventDataDeckItem
 } from "shared/types";
+import { MarsEventsDeck } from "@/repositories/MarsEvents";
 import _ from "lodash";
 import {getRandomIntInclusive} from "@/util";
 import {getAccomplishmentByID, getAccomplishmentIDs} from "@/repositories/Accomplishment";
-import {getAllMarsEvents, getMarsEventByID} from "@/repositories/MarsEvents";
 import {GameEvent} from "@/game/events/types";
 import { string } from "@colyseus/schema/lib/encoding/decode";
 
@@ -486,110 +487,15 @@ export class AccomplishmentSet extends Schema implements AccomplishmentSetData {
   }
 }
 
-export class MarsEvent extends Schema implements MarsEventData {
-  constructor(data: MarsEventData) {
-    super();
-    this.id = data.id;
-    this.duration = data.duration;
-    this.elapsed = 0;
-    this.name = data.name;
-    this.flavorText = data.flavorText;
-    this.serverActionHandler = data.serverActionHandler!;
-    this.clientViewHandler = data.clientViewHandler;
-    this.clientActionHandler = data.clientActionHandler!;
-    this.effect = data.effect;
-  }
-
-  static fromID(id: number) {
-    const me = getMarsEventByID(id)!;
-    return new MarsEvent(me);
-  }
-
-  updateElapsed():void {
-    this.elapsed++;
-  }
-
-  resetElapsed():void {
-    this.elapsed = 0;
-  }
-
-  complete():boolean {
-    if(this.elapsed === this.duration) {
-      // console.log('EVENT COMPLETE');
-      return true;
-    } else {
-      // console.log('EVENT INCOMPLETE');
-      return false;
-    }
-  }
-
-  toJSON(): number {
-    return this.id;
-  }
-
-  @type('number')
-  id: number;
-
-  @type('number')
-  duration: number;
-
-  @type('number')
-  elapsed: number;
-
-  @type('string')
-  name: string;
-
-  @type('string')
-  flavorText: string;
-
-  @type('string')
-  effect: string;
-
-  @type('string')
-  serverActionHandler: EventServerAction;
-
-  @type('string')
-  clientViewHandler: EventClientView;
-
-  @type('string')
-  clientActionHandler: EventClientAction;
+export interface MarsEvent extends Schema {
+  data?: MarsEventDataDeckItem;
+  
+  finalize(game: GameState): void;
 }
 
-interface MarsEventDeckSerialized {
+export interface MarsEventDeckSerialized {
   position: number
   deck: Array<MarsEventData>
-}
-
-export class MarsEventsDeck {
-  constructor(data: Partial<MarsEventDeckSerialized> = {}) {
-    this.deck = data.deck ? data.deck : _.shuffle(_.clone(getAllMarsEvents()));
-    this.position = data.position ? data.position : 0;
-  }
-
-  fromJSON(data: MarsEventDeckSerialized) {
-    this.deck.splice(0, this.deck.length, ...data.deck);
-    this.position = data.position;
-  }
-
-  toJSON(): { position: number, deck: Array<MarsEventData> } {
-    return {
-      deck: this.deck,
-      position: this.position
-    }
-  }
-
-  position: number;
-  deck: Array<MarsEventData>;
-
-  updatePosition(cardsUsed: number): void {
-    this.position = (this.position + cardsUsed) % this.deck.length;
-  }
-
-  public peek(upkeep: number): Array<MarsEvent> {
-    const nCardsToDraw = upkeep < 33 ? 3 : upkeep < 67 ? 2 : 1;
-    const cardsInds = _.map(_.range(this.position, this.position + nCardsToDraw), ind => ind % this.deck.length);
-    return _.map(cardsInds, ind => new MarsEvent(this.deck[ind]));
-  }
 }
 
 export interface PlayerSerialized {
@@ -797,7 +703,7 @@ export class Player extends Schema implements PlayerData {
 
   invest(investment?: InvestmentData,leftOverInvestments?: InvestmentData) {
 
-    investment = investment ?? this.pendingInvestments;
+    investment = investment ?? this.pendingInvestments
     leftOverInvestments = leftOverInvestments ?? PendingInvestment.defaults()
 
     for (const [k,v] of Object.entries(investment)){
@@ -908,28 +814,6 @@ export class GameState extends Schema implements GameData {
     this.lastTimePolled = new Date();
     this.maxRound = getRandomIntInclusive(8, 12);
     this.players = new PlayerSet();
-
-    // this.tradeSet['123'] = new Trade(
-    //   {
-    //   role: 'Curator',
-    //   resourceAmount: {
-    //     science: 1,
-    //     government: 1,
-    //     legacy: 1,
-    //     finance: 1,
-    //     culture: 1
-    //   }
-    // },
-    // {
-    //   role: 'Researcher',
-    //   resourceAmount: {
-    //     science: 1,
-    //     government: 1,
-    //     legacy: 1,
-    //     finance: 1,
-    //     culture: 1
-    //   }
-    // });
   }
 
   static DEFAULTS = {
@@ -1101,11 +985,24 @@ export class GameState extends Schema implements GameData {
     return this.upkeep + contributedUpkeep - 25;
   }
 
+  subtractUpkeep(amount: number): void {
+    const current = this.upkeep;
+    if((current - amount) >= 0) {
+      this.upkeep = current - amount;
+    } else {
+      this.upkeep = 0;
+    }
+  }
+
   applyMany(event: Array<GameEvent>): void {
     event.forEach(e => e.apply(this));
   }
 
   apply(event: GameEvent): void {
     event.apply(this);
+  }
+
+  get currentEvent() {
+    return this.marsEvents[this.marsEventsProcessed];
   }
 }
