@@ -14,16 +14,18 @@ import {
   PAGE_META,
   REGISTER_PAGE,
   TUTORIAL_PAGE,
-  DASHBOARD_PAGE,
+  DASHBOARD_PAGE, ASULOGIN_PAGE,
   // REFACTOR_UI
 } from "@port-of-mars/shared/routes";
 import Register from "@port-of-mars/client/views/Register.vue";
+import ASULogin from "@port-of-mars/client/views/ASULogin.vue";
 
 Vue.use(Router);
 
 const router = new Router({
   mode: 'hash',
   routes: [
+    { ...PAGE_META[ASULOGIN_PAGE], component: ASULogin },
     { ...PAGE_META[LOGIN_PAGE], component: Login },
     { ...PAGE_META[LOBBY_PAGE], component: WaitingLobby },
     { ...PAGE_META[GAME_PAGE], component: Game },
